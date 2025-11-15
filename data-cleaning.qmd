@@ -2,4 +2,108 @@
 title: Data Cleaning
 format: typst
 ---
+library(tidyverse)
+library(dplyr)
+library(readxl)
 
+```{r}
+
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(readxl)
+library(janitor)
+library(sf)
+precinct_votes <- read_csv("g24_sov_by_g24_svprec.csv")
+district_results <- read_excel("g24-results-by-district.xlsx")
+candidates <- read_csv("g24-candidates-by-district.csv")
+precinct <- tibble(
+    county = precinct_votes$COUNTY,
+    congress_dist = precinct_votes$CDDIST,
+    voting_prec = parse_number(precinct_votes$SVPREC),
+    dem_votes1 = parse_number(precinct_votes$CNGDEM01),
+    dem_votes2 = parse_number(precinct_votes$CNGDEM02),
+    rep_votes1 = parse_number(precinct_votes$CNGREP01),
+    rep_votes2 = parse_number(precinct_votes$CNGREP02)
+)
+
+precinct <- na.omit(precinct)
+precinct
+num_na <- sum(is.na(precinct$dem_votes1))
+num_na
+
+```
+
+disclaimers for precinct_votes: all values other than total vote and party split totals are asterisked out. those fields in the dbfs (?) are integers so they are zeroed out instead. the files include artiacts.
+I have cleaned the precinct table, selecting only the columns I need. I used parse_number() to remove asterisks and artifacts, and convert the column data to doubles. I also used na.omit() to remove those asterisks rows which contained no information. 
+
+
+
+```{r}
+stats_cdst <- precinct|>
+    group_by(county, congress_dist)|>
+    summarize(
+        dem_votes = sum(dem_votes1) + sum(dem_votes2),
+        rep_votes = sum(rep_votes1)  + sum(rep_votes2),
+        total = sum(dem_votes, rep_votes),
+        dem_prop = (dem_votes/total), 
+        rep_prop = (rep_votes/total)
+    )|>
+        ungroup()
+stats_county <- precinct|>
+    group_by(county)|>
+    summarize(
+        dem_votes = sum(dem_votes1) + sum(dem_votes2),
+        rep_votes = sum(rep_votes1)  + sum(rep_votes2),
+        total = sum(dem_votes, rep_votes),
+        dem_prop = (dem_votes/total), 
+        rep_prop = (rep_votes/total)
+    )|>
+        ungroup()
+
+dems_only <- stats|>
+    filter(dem_prop == 1)
+
+reps_only <- stats|>
+    filter(rep_prop == 1)
+
+
+stats_cdst
+stats_county
+dems_only
+reps_only
+```
+
+data filtered for total vote counts per party, as well as proportions. the tables are grouped by county and congressional district
+dems_only and reps_only are tables containing counties and cddists which had candidates of their respective parties only. 
+
+
+```{r}
+
+colnames(district_results)[1]<- 'District'
+colnames(district_results)[2]<- "D"
+colnames(district_results)[3]<- "R"
+names <-district_results|>
+    slice(c(2, 3, 20, 21))
+names
+d_results <- tibble(
+    'District' = district_results$District, 
+    'D' = ceiling(parse_number(district_results$D)), 
+    'R' = ceiling(parse_number(district_results$R)),
+    'Total' = D + R
+)
+d_results <- na.omit(d_results)
+d_results
+num_na <- sum(is.na(d_results$District))
+num_na
+
+```
+
+cleaned and renamed district data, for now dropping names of candidates
+
+```{r}
+
+d_results
+stats_cdst
+stats_county
+```
