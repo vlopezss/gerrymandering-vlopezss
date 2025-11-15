@@ -5,24 +5,19 @@ format: typst
 
 ### Question 1
 
-Put your question here.
-
+How many Districts were won by the Rep Party?
 ### Answer 1
 
-Put your answer here.
-
+78
 ### Question 2
 
-Put your question here.
-
+How many districts were won by the Dem Party?
 ### Answer 2
 
-Put your answer here.
-
+105
 ### Question 3
 
-Put your question here.
-
+What was the Mean-Median gap for the states districts? 
 ### Answer 3
 
-Put your answer here.
+0.0130
